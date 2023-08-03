@@ -1,9 +1,9 @@
 defmodule SentrypeerCsv do
-  NimbleCSV.define(SentryPeerParser, separator: "\t", escape: "\"")
+  NimbleCSV.define(SentryPeerParser, separator: ",", escape: "\"")
   use HTTPoison.Base
 
   @sentrypeer_token_url "https://authz.sentrypeer.com/oauth/token"
-  @sentrypeer_api_url "http://127.0.0.1:4000/api/phone-numbers/"
+  @sentrypeer_api_url "https://sentrypeer.com/api/phone-numbers/"
   @sentrypeer_client_id System.get_env("SENTRYPEER_CLIENT_ID") ||
                           raise("Missing env var SENTRYPEER_CLIENT_ID")
   @sentrypeer_client_secret System.get_env("SENTRYPEER_CLIENT_SECRET") ||
@@ -27,24 +27,62 @@ defmodule SentrypeerCsv do
 
   """
   def parse_csv(csv_file) do
-    create_bucket()
+    create_bucket_if_not_exists()
 
     csv_file
     |> File.stream!()
     |> SentryPeerParser.parse_stream()
     |> Stream.map(fn [
-                       _area,
+                       _tenant,
+                       _caller_id,
                        number,
-                       _call_date,
-                       _total_duration,
-                       _talk_time,
-                       _not_used,
-                       _call_state
+                       _datetime,
+                       _duration,
+                       _rating_duration,
+                       _rating_cost,
+                       _status
                      ] ->
       %{number: :binary.copy(number)}
-      check_with_sentrypeer_api(%{number: number})
+
+      if String.length(number) != 4 do
+        check_with_sentrypeer_api(%{number: number})
+      end
     end)
     |> Stream.run()
+  end
+
+  defp normalise_number_to_uk(number) do
+    if String.length(number) == 10 do
+      "44" <> number
+    else
+      number
+    end
+  end
+
+  defp create_bucket_if_not_exists do
+    case :ets.info(@ets_bucket) do
+      [
+        id: _,
+        decentralized_counters: false,
+        read_concurrency: false,
+        write_concurrency: false,
+        compressed: false,
+        memory: _,
+        owner: _,
+        heir: :none,
+        name: :sentrypeer_access_token,
+        size: _,
+        node: _,
+        named_table: true,
+        type: :set,
+        keypos: 1,
+        protection: :public
+      ] ->
+        :ok
+
+      :undefined ->
+        create_bucket()
+    end
   end
 
   defp create_bucket do
@@ -68,19 +106,18 @@ defmodule SentrypeerCsv do
 
   defp check_with_sentrypeer_api(%{number: number}) do
     with {:ok, access_token} <- get_auth_token() do
-      #      IO.puts("Checking #{number}")
-
       case HTTPoison.get(
              @sentrypeer_api_url <> number,
              headers(access_token),
              options()
            ) do
-        {:ok, %HTTPoison.Response{status_code: 302, body: body}} ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
           IO.puts("Found: #{number}")
           body
 
-        {:ok, %HTTPoison.Response{status_code: 404, headers: headers}} ->
-          IO.puts("Ratelimit remaining: #{inspect(Enum.fetch!(headers, 2))}")
+        {:ok, %HTTPoison.Response{status_code: 404, headers: _headers}} ->
+          # IO.puts("Ratelimit remaining: #{inspect(Enum.fetch!(headers, 9))}")
+          IO.puts("Not found: #{number}")
 
         {:ok, %HTTPoison.Response{status_code: status_code, body: body}} ->
           IO.puts("Error: #{status_code} #{body}")
