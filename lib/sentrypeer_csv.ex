@@ -4,10 +4,6 @@ defmodule SentrypeerCsv do
 
   @sentrypeer_token_url "https://authz.sentrypeer.com/oauth/token"
   @sentrypeer_api_url "https://sentrypeer.com/api/phone-numbers/"
-  @sentrypeer_client_id System.get_env("SENTRYPEER_CLIENT_ID") ||
-                          raise("Missing env var SENTRYPEER_CLIENT_ID")
-  @sentrypeer_client_secret System.get_env("SENTRYPEER_CLIENT_SECRET") ||
-                              raise("Missing env var SENTRYPEER_CLIENT_SECRET")
   @sentrypeer_audience "https://sentrypeer.com/api"
   @ets_bucket :sentrypeer_access_token
 
@@ -18,11 +14,11 @@ defmodule SentrypeerCsv do
   """
 
   @doc """
-  Parse a CSV file and search for matches in the SentryPeer database.
+  Parse a CSV file of Call Data Records (CDRs) and check each number against the SentryPeerHQ API.
 
   ## Examples
 
-      iex> SentrypeerCsv.hello()
+      iex> SentrypeerCsv.parse_csv("cdrs.csv")
       :world
 
   """
@@ -169,8 +165,12 @@ defmodule SentrypeerCsv do
 
   defp auth_token_json do
     Jason.encode!(%{
-      "client_id" => @sentrypeer_client_id,
-      "client_secret" => @sentrypeer_client_secret,
+      "client_id" =>
+        System.get_env("SENTRYPEER_CLIENT_ID") ||
+          raise("Missing env var SENTRYPEER_CLIENT_ID"),
+      "client_secret" =>
+        System.get_env("SENTRYPEER_CLIENT_SECRET") ||
+          raise("Missing env var SENTRYPEER_CLIENT_SECRET"),
       "audience" => @sentrypeer_audience,
       "grant_type" => "client_credentials"
     })

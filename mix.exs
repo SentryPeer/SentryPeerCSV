@@ -7,7 +7,12 @@ defmodule SentrypeerCsv.MixProject do
       version: "0.1.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      description: description(),
+      package: package(),
+      deps: deps(),
+      name: "SentryPeerCSV",
+      source_url: "https://github.com/SentryPeer/SentryPeerCSV",
+      homepage_url: "https://sentypeer.com"
     ]
   end
 
@@ -24,6 +29,23 @@ defmodule SentrypeerCsv.MixProject do
       {:nimble_csv, "~> 1.1"},
       {:httpoison, "~> 2.0"},
       {:jason, "~> 1.3"}
+    ]
+  end
+
+  defp description() do
+    "Parse a CSV file of Call Data Records (CDRs) and check SentryPeerHQ API (https://github.com/SentryPeer/SentryPeerHQ) to find a match."
+  end
+
+  defp package() do
+    [
+      files: ~w(lib priv .formatter.exs mix.exs CHANGELOG.md CONTRIBUTING.md
+                      COPYING COPYRIGHT LICENSE README.md SECURITY.md src),
+      licenses: ["Apache 2.0"],
+      links: %{
+        "GitHub" => "https://github.com/SentryPeer/SentryPeerCSV",
+        "SentryPeerHQ" => "https://github.com/SentryPeer/SentryPeerHQ",
+        "SentryPeer" => "https://sentypeer.com"
+      }
     ]
   end
 end
