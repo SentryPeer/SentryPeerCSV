@@ -38,9 +38,9 @@ defmodule SentrypeerCsv.MixProject do
 
   defp package() do
     [
-      files: ~w(lib priv .formatter.exs mix.exs CHANGELOG.md CONTRIBUTING.md
-                      COPYING COPYRIGHT LICENSE README.md SECURITY.md src),
-      licenses: ["Apache 2.0"],
+      files: ~w(lib .formatter.exs mix.exs CHANGELOG.md CONTRIBUTING.md
+                      COPYRIGHT LICENSE README.md SECURITY.md),
+      licenses: ["Apache-2.0"],
       links: %{
         "GitHub" => "https://github.com/SentryPeer/SentryPeerCSV",
         "SentryPeerHQ" => "https://github.com/SentryPeer/SentryPeerHQ",
